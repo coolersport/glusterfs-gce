@@ -16,12 +16,12 @@ done
 # create servers
 for (( i=1; i<=${COUNT}; i++ ))
 do
-    gcloud compute instances create ${SERVER}-${i} --image=$IMAGE --image-project=ubuntu-os-cloud \
-     --boot-disk-type pd-standard --boot-disk-size 200 --zone ${REGION}-${ZONES[$i-1]} \
+    gcloud compute instances create ${SERVER}-${i} --image=$IMAGE --image-project=centos-os-cloud \
+     --boot-disk-type pd-standard --boot-disk-size 64 --zone ${REGION}-${ZONES[$i-1]} \
      --machine-type=${MACHINE_TYPE} \
      --can-ip-forward --tags ${SERVER},${SERVER}-${i} \
      --disk name=${DISK}1-${i} \
-     --scopes compute-rw,logging-write,monitoring-write,sql,storage-full,useraccounts-rw
+     --scopes compute-rw,logging-write,monitoring,sql-admin,storage-full
 
      echo "Waiting for VM ${SERVER}-${i} to be ready..."
      spin='-\|/'
@@ -33,17 +33,17 @@ do
      echo " "
 
      # add network ens4:0 with the static IP
-     echo "Updating /etc/network/interfaces file on  ${SERVER}-${i} ..."
-     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command \
-     'echo -e "# static IP
-     auto ens4:0
-     iface ens4:0 inet static
-       address '${STATIC_IP[$i-1]}'
-       netmask 255.255.255.0" | sudo tee -a /etc/network/interfaces'
-     echo " "
-     echo "Enabling ens4:0 network interface on ${SERVER}-${i} ..."
-     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "sudo ifup ens4:0"
-     echo " "
+     #echo "Updating /etc/network/interfaces file on  ${SERVER}-${i} ..."
+     #gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command \
+     #'echo -e "# static IP
+     #auto ens4:0
+     #iface ens4:0 inet static
+     #  address '${STATIC_IP[$i-1]}'
+     #  netmask 255.255.255.0" | sudo tee -a /etc/network/interfaces'
+     #echo " "
+     #echo "Enabling ens4:0 network interface on ${SERVER}-${i} ..."
+     #gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "sudo ifup ens4:0"
+     #echo " "
      #
 
      # format disk1
@@ -54,23 +54,23 @@ do
      gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "sudo mkdir -p /data/brick1 && echo '/dev/sdb /data/brick1 xfs defaults 1 2' | sudo tee -a /etc/fstab && sudo mount -a && mount"
      echo " "
 
-     # apt-get update
-     echo "Run apt-get update"
-     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "yes | sudo apt-get update"
+     # yum  update
+     echo "Run yum update"
+     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "sudo yum -y update"
      echo " "
      
      # Install GlusterFS server
      echo "Install GlusterFS server"
-     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "yes | sudo apt-get install glusterfs-server"
+     gcloud compute ssh --zone ${REGION}-${ZONES[$i-1]} ${SERVER}-${i} --command "sudo yum -y install glusterfs-server"
      echo " "
 
      # Set internal static IP route
      # Create the route for VM's static IP
-     echo "Creating the route for ${SERVER}-${i} static IP ${STATIC_IP[$i-1]} ..."
-     gcloud compute routes create ip-${SERVER}-${i} \
-         --next-hop-instance ${SERVER}-${i} \
-            --next-hop-instance-zone ${REGION}-${ZONES[$i-1]} \
-                --destination-range ${STATIC_IP[$i-1]}/32
+     #echo "Creating the route for ${SERVER}-${i} static IP ${STATIC_IP[$i-1]} ..."
+     #gcloud compute routes create ip-${SERVER}-${i} \
+     #    --next-hop-instance ${SERVER}-${i} \
+     #       --next-hop-instance-zone ${REGION}-${ZONES[$i-1]} \
+     #           --destination-range ${STATIC_IP[$i-1]}/32
     echo " "
 done
 

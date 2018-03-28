@@ -1,4 +1,4 @@
-#!/bin/bash
+s#!/bin/bash
 # Delete GlusterFS cluster
 
 # Get settings from the file
